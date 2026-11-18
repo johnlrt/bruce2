@@ -46,10 +46,18 @@ extern CYD28_TouchR touch; // defined by hal/inputs/touch.cpp
 #define XPT2046_CS CYD28_TouchR_CS
 static DeviceTouch touchCfg() {
     DeviceTouch cfg;
+#if defined(TOUCH_ROTATE_90_CW)
+    // 90° clockwise (по часовой стрелке) rotated touch mapping for 2.4" rectangular (320x240) screen
+    // rotation:        0      1      2      3
+    const bool swapXY[4] = {false, true, false, true};
+    const bool mirrorX[4] = {true, true, false, false};
+    const bool mirrorY[4] = {true, false, false, true};
+#else
     // rotation:        0      1      2      3
     const bool swapXY[4] = {true, false, true, false};
     const bool mirrorX[4] = {true, false, false, true};
     const bool mirrorY[4] = {false, false, true, true};
+#endif
     for (int i = 0; i < 4; i++) {
         cfg.SwapXY[i] = swapXY[i];
         cfg.MirrorX[i] = mirrorX[i];
