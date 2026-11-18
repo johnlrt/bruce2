@@ -29,11 +29,20 @@ static void panelSize(int16_t &w, int16_t &h) {
 #if defined(TOUCH_CTRL_XPT2046)
 #include "CYD28_TouchscreenR.h"
 #include <SPI.h>
+#if defined(TOUCH_ROTATE_90_CW)
+#ifndef CYD28_DISPLAY_HOR_RES_MAX
+#define CYD28_DISPLAY_HOR_RES_MAX 240
+#endif
+#ifndef CYD28_DISPLAY_VER_RES_MAX
+#define CYD28_DISPLAY_VER_RES_MAX 320
+#endif
+#else
 #ifndef CYD28_DISPLAY_HOR_RES_MAX
 #define CYD28_DISPLAY_HOR_RES_MAX 320
 #endif
 #ifndef CYD28_DISPLAY_VER_RES_MAX
 #define CYD28_DISPLAY_VER_RES_MAX 240
+#endif
 #endif
 // Named `touch` (external linkage, not `static`) on purpose: settings.cpp's
 // calibrateTouch()/loadTouchCalibration() (HAS_RESISTIVE_TOUCH) still do
@@ -227,8 +236,11 @@ bool hal_touch_read(const DeviceTouch &cfg, BruceTouchPoint &out) {
     if (!touch.touched()) return false;
     auto p = touch.getPointScaled();
     int16_t x = p.x, y = p.y;
+    int16_t maxX = CYD28_DISPLAY_HOR_RES_MAX;
+    int16_t maxY = CYD28_DISPLAY_VER_RES_MAX;
 #elif defined(TOUCH_CTRL_FT6X36)
     int16_t x = 0, y = 0;
+    int16_t maxX = screenW, maxY = screenH;
     if (!touch.getPoint(&x, &y, 1)) return false;
 #endif
 #if defined(TOUCH_CTRL_XPT2046) || defined(TOUCH_CTRL_FT6X36)
@@ -236,7 +248,12 @@ bool hal_touch_read(const DeviceTouch &cfg, BruceTouchPoint &out) {
         int16_t t = x;
         x = y;
         y = t;
+        int16_t tm = maxX;
+        maxX = maxY;
+        maxY = tm;
     }
+    if (maxX != screenW && maxX > 0) x = (int32_t)x * screenW / maxX;
+    if (maxY != screenH && maxY > 0) y = (int32_t)y * screenH / maxY;
     if (cfg.MirrorX[r]) x = screenW - x;
     if (cfg.MirrorY[r]) y = screenH - y;
     out.x = x;
